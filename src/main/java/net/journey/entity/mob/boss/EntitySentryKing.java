@@ -1,8 +1,3 @@
-/*
-TODO:
-
-CUSTOM PROJECTILES: A GRAVITY-AFFECTED GRENADE THAT CAUSES SMALL EXPLOSIONS FOR THE GENERIC RANGED ATTACK AND INVISIBLE FLAME PARTICLE PROJECTILES FOR THE FLAMETHROWER
-*/
 package net.journey.entity.mob.boss;
 
 import net.journey.blocks.tileentity.TileEntityJourneyChest;
@@ -29,9 +24,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
-import net.slayer.api.entity.EntityEssenceBoss;
 
-public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttackMob {
+public class EntitySentryKing extends EntityFlyingBoss {
 
     public int phase;
     private float speedMod;
@@ -48,21 +42,27 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
         super.initEntityAI();
         this.tasks.addTask(7, new EntitySentryKing.AILookAround());
         this.targetTasks.addTask(1, new EntityAIFindEntityNearestPlayer(this));
-        this.tasks.addTask(0, new EntityAIAttackRanged(this, 1.0D, 1, 20.0F));
-        addAttackingAI();
+        //this.tasks.addTask(0, new EntityAIAttackRanged(this, 1.0D, 1, 20.0F));
+        //addAttackingAI();
     }
 
-    @Override
+    /*@Override
     public double setAttackDamage(MobStats s) {
         return MobStats.sentryKingDamage;
-    }
+    }*/
 
     @Override
     public double setKnockbackResistance() {
         return 1.0D;
     }
-
+    
     @Override
+    public void onUpdate() {
+        super.onUpdate();
+        if (!this.world.isRemote && this.world.getDifficulty() == EnumDifficulty.PEACEFUL) this.setDead();
+    }
+
+    /*@Override
     public void attackEntityWithRangedAttack(EntityLivingBase target, float f1) {
     	if (--flamethrowerTimer > 0) {
             this.world.playBroadcastSound(1014, new BlockPos(this), 0);
@@ -89,7 +89,7 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
             JourneySounds.playSound(JourneySounds.MAGIC_SPARKLE, world, this);
             this.world.spawnEntity(b);
         }
-    }
+    }*/
 
     public void onLivingUpdate() {
         if (this.getHealth() / this.getMaxHealth() >= 0.9) {
@@ -193,9 +193,9 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
     public void fall(float distance, float damageMultiplier) {
     }
 
-    @Override
+    /*@Override
     public void setSwingingArms(boolean swingingArms) {
-    }
+    }*/
 
     private class MoveHelper extends EntityMoveHelper {
         private EntitySentryKing e = EntitySentryKing.this;
