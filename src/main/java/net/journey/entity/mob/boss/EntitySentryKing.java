@@ -1,16 +1,13 @@
-/*
-TODO:
-
-CUSTOM PROJECTILES: A GRAVITY-AFFECTED GRENADE THAT CAUSES SMALL EXPLOSIONS FOR THE GENERIC RANGED ATTACK AND INVISIBLE FLAME PARTICLE PROJECTILES FOR THE FLAMETHROWER
-*/
 package net.journey.entity.mob.boss;
 
-import net.journey.entity.base.EntityAttributesHelper;
+import net.journey.blocks.tileentity.TileEntityJourneyChest;
+import net.journey.entity.MobStats;
+import net.journey.entity.projectile.EntityFloroWater;
 import net.journey.entity.projectile.EntityMagmaFireball;
-import net.journey.entity.projectile.EntitySentryKingGrenade;
-import net.journey.entity.util.EntityBossCrystal;
-import net.journey.init.JourneyLootTables;
 import net.journey.init.JourneySounds;
+import net.journey.init.blocks.JourneyBlocks;
+import net.journey.init.items.JourneyItems;
+import net.journey.init.items.JourneyWeapons;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IRangedAttackMob;
 import net.minecraft.entity.ai.EntityAIAttackRanged;
@@ -18,18 +15,17 @@ import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.ai.EntityAIFindEntityNearestPlayer;
 import net.minecraft.entity.ai.EntityMoveHelper;
 import net.minecraft.init.SoundEvents;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
-import net.slayer.api.entity.EntityEssenceBoss;
-import org.jetbrains.annotations.Nullable;
 
-public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttackMob {
+public class EntitySentryKing extends EntityFlyingBoss {
 
     public int phase;
     private float speedMod;
@@ -46,30 +42,27 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
         super.initEntityAI();
         this.tasks.addTask(7, new EntitySentryKing.AILookAround());
         this.targetTasks.addTask(1, new EntityAIFindEntityNearestPlayer(this));
-        this.tasks.addTask(0, new EntityAIAttackRanged(this, 1.0D, 1, 20.0F));
-        addMeleeAttackingAI();
+        //this.tasks.addTask(0, new EntityAIAttackRanged(this, 1.0D, 1, 20.0F));
+        //addAttackingAI();
     }
 
-    @Override
-    protected void applyEntityAttributes() {
-        super.applyEntityAttributes();
+    /*@Override
+    public double setAttackDamage(MobStats s) {
+        return MobStats.sentryKingDamage;
+    }*/
 
-        EntityAttributesHelper.setMaxHealth(this, 2500);
-        EntityAttributesHelper.setAttackDamage(this, 20);
-        EntityAttributesHelper.setKnockbackResistance(this, 1);
+    @Override
+    public double setKnockbackResistance() {
+        return 1.0D;
+    }
+    
+    @Override
+    public void onUpdate() {
+        super.onUpdate();
+        if (!this.world.isRemote && this.world.getDifficulty() == EnumDifficulty.PEACEFUL) this.setDead();
     }
 
-    @Override
-    protected SoundEvent getAmbientSound() {
-        return SoundEvents.ENTITY_WITHER_AMBIENT;
-    }
-
-    @Override
-    protected SoundEvent getHurtSound(DamageSource d) {
-        return SoundEvents.ENTITY_WITHER_HURT;
-    }
-
-    @Override
+    /*@Override
     public void attackEntityWithRangedAttack(EntityLivingBase target, float f1) {
     	if (--flamethrowerTimer > 0) {
             this.world.playBroadcastSound(1014, new BlockPos(this), 0);
@@ -87,16 +80,16 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
         } else if (rand.nextInt(500 / phase) == 1) {
             flamethrowerTimer = 20 * phase;
         } else if (rand.nextInt(100 / phase) == 1) {
-            EntitySentryKingGrenade b = new EntitySentryKingGrenade(this.world, this);
+        	EntityFloroWater b = new EntityFloroWater(this.world, this, 1.0F);
             double d0 = target.posX - this.posX;
             double d1 = target.getEntityBoundingBox().minY + (double) (target.height / 3.0F) - b.posY;
             double d2 = target.posZ - this.posZ;
             double d3 = MathHelper.sqrt(d0 * d0 + d2 * d2);
-            b.shoot(d0, d1 + d3 - 5F, d2, 0.6F, (float) (14 - this.world.getDifficulty().getId() * 4));
-            JourneySounds.playSound(JourneySounds.MAGIC_SPARKLE, this);
+            b.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.world.getDifficulty().getId() * 4));
+            JourneySounds.playSound(JourneySounds.MAGIC_SPARKLE, world, this);
             this.world.spawnEntity(b);
         }
-    }
+    }*/
 
     public void onLivingUpdate() {
         if (this.getHealth() / this.getMaxHealth() >= 0.9) {
@@ -134,20 +127,62 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
     }
 
     @Override
+    public double setMaxHealth(MobStats s) {
+        return MobStats.sentryKingHealth;
+    }
+
+    @Override
+    public SoundEvent setLivingSound() {
+        return SoundEvents.ENTITY_WITHER_AMBIENT;
+    }
+
+    @Override
+    public SoundEvent setHurtSound() {
+        return SoundEvents.ENTITY_WITHER_HURT;
+    }
+
+    @Override
+    public SoundEvent setDeathSound() {
+        return JourneySounds.BOSS_DEATH;
+    }
+
+    @Override
     public boolean getCanSpawnHere() {
         return this.rand.nextInt(15) == 0 && super.getCanSpawnHere()
                 && this.world.getDifficulty() != EnumDifficulty.PEACEFUL;
     }
 
     @Override
-    protected @Nullable EntityBossCrystal.Type getDeathCrystalType() {
-        return EntityBossCrystal.Type.CORBA;
+    public Item getItemDropped() {
+        return null;
     }
 
     @Override
-    protected @Nullable ResourceLocation getLootTable() {
-        return JourneyLootTables.SENTRY_KING;
+    public void onDeath(DamageSource damage) {
+		/*if(damage.getEntity() instanceof EntityPlayer) {
+			EntityPlayer p = (EntityPlayer)damage.getEntity();
+			p.triggerAchievement(JourneyAchievements.achievementSentry); {
+			}
+		}*/
+        this.world.setBlockState(new BlockPos((int) Math.floor(this.posX + 0), ((int) Math.floor(this.posY + 1)), ((int) Math.floor(this.posZ + 0))), JourneyBlocks.trophySentry.getStateFromMeta(5));
+        this.world.setBlockState(new BlockPos((int) Math.floor(this.posX + 0), ((int) Math.floor(this.posY + 0)), ((int) Math.floor(this.posZ + 0))), JourneyBlocks.journeyChest.getStateFromMeta(5));
+        TileEntityJourneyChest te = (TileEntityJourneyChest) world.getTileEntity(new BlockPos((int) Math.floor(this.posX + 0), ((int) Math.floor(this.posY + 0)), ((int) Math.floor(this.posZ + 0))));
+        switch (rand.nextInt(2)) {
+            case 0:
+                te.setInventorySlotContents(15, new ItemStack(JourneyItems.terraniaPortalGem, 4));
+                te.setInventorySlotContents(1, new ItemStack(JourneyWeapons.sentrySword, 1));
+                te.setInventorySlotContents(4, new ItemStack(JourneyWeapons.overseerBow, 1));
+                te.setInventorySlotContents(7, new ItemStack(JourneyItems.ANCIENT_EYE_OF_OPENING, 1));
+                break;
+            case 1:
+                te.setInventorySlotContents(1, new ItemStack(JourneyItems.terraniaPortalGem, 5));
+                te.setInventorySlotContents(10, new ItemStack(JourneyWeapons.sentrySword, 1));
+                te.setInventorySlotContents(16, new ItemStack(JourneyWeapons.overseerBow, 1));
+                te.setInventorySlotContents(5, new ItemStack(JourneyItems.ANCIENT_EYE_OF_OPENING, 1));
+                break;
+        }
     }
+
 
     @Override
     protected void entityInit() {
@@ -158,12 +193,12 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
     public void fall(float distance, float damageMultiplier) {
     }
 
-    @Override
+    /*@Override
     public void setSwingingArms(boolean swingingArms) {
-    }
+    }*/
 
     private class MoveHelper extends EntityMoveHelper {
-        private final EntitySentryKing e = EntitySentryKing.this;
+        private EntitySentryKing e = EntitySentryKing.this;
         private int height;
 
         public MoveHelper() {
@@ -207,7 +242,7 @@ public class EntitySentryKing extends EntityEssenceBoss implements IRangedAttack
     }
 
     public class AILookAround extends EntityAIBase {
-        private final EntitySentryKing e = EntitySentryKing.this;
+        private EntitySentryKing e = EntitySentryKing.this;
 
         public AILookAround() {
             this.setMutexBits(2);
